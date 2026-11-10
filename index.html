@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Lixeiro Pixel 3D</title>
+<style>
+@font-face {
+  font-family: 'PixelFont';
+  src: url('fonts/PressStart2P.woff2') format('woff2');
+  font-display: swap;
+}
+:root {
+  --ink: #181425;
+  --navy: #262b44;
+  --slate: #3a4466;
+  --mist: #c0cbdc;
+  --white: #ffffff;
+  --orange: #f77622;
+  --yellow: #feae34;
+  --gold: #fee761;
+  --green: #63c74d;
+  --dgreen: #3e8948;
+  --red: #e43b44;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; height: 100%; overflow: hidden;
+  background: #181425; color: var(--white);
+  font-family: 'PixelFont', ui-monospace, 'Courier New', monospace;
+  font-size: 10px; line-height: 1.5;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+}
+#game {
+  position: fixed; inset: 0; width: 100%; height: 100%; display: block;
+  image-rendering: pixelated; image-rendering: crisp-edges;
+}
+.hidden { display: none !important; }
+.outline {
+  text-shadow: 2px 0 var(--ink), -2px 0 var(--ink), 0 2px var(--ink), 0 -2px var(--ink),
+               2px 2px var(--ink), -2px 2px var(--ink), 2px -2px var(--ink), -2px -2px var(--ink);
+}
+
+/* ---------- HUD ---------- */
+#hud { position: fixed; inset: 0; pointer-events: none; padding: 12px;
+  padding-top: max(12px, env(safe-area-inset-top)); }
+#hudLeft { position: absolute; left: 12px; top: max(12px, env(safe-area-inset-top)); }
+#money { font-size: 20px; color: var(--gold); display: flex; align-items: center; gap: 8px; }
+#money .coin {
+  width: 18px; height: 18px; background: var(--yellow); display: inline-block;
+  box-shadow: 0 0 0 3px var(--ink), inset -3px -3px 0 #c97a1e, inset 3px 3px 0 var(--gold);
+}
+#money.bump { animation: bump .18s steps(3); }
+@keyframes bump { 50% { transform: translateY(-4px); } }
+#carry { margin-top: 10px; font-size: 10px; color: var(--white); }
+#combo { margin-top: 8px; font-size: 12px; color: var(--orange); min-height: 18px; }
+#hudCenter { position: absolute; left: 50%; top: max(12px, env(safe-area-inset-top));
+  transform: translateX(-50%); text-align: center; width: min(40vw, 260px); }
+#loadLabel { font-size: 8px; margin-bottom: 4px; }
+#load { height: 14px; background: var(--navy); box-shadow: 0 0 0 3px var(--ink); position: relative; }
+#loadFill { position: absolute; left: 0; top: 0; bottom: 0; width: 0%; background: var(--green);
+  box-shadow: inset 0 -4px 0 var(--dgreen); }
+#hudRight { position: absolute; right: 12px; top: max(12px, env(safe-area-inset-top));
+  display: flex; gap: 10px; pointer-events: auto; }
+#hint { position: absolute; left: 50%; top: calc(max(12px, env(safe-area-inset-top)) + 52px); transform: translateX(-50%);
+  width: min(90vw, 560px); text-align: center; font-size: 10px; line-height: 1.8; color: var(--white);
+  transition: opacity .6s; }
+
+.btn {
+  font-family: inherit; font-size: 10px; color: var(--white); cursor: pointer;
+  background: var(--orange); border: 0; padding: 10px 12px; position: relative;
+  box-shadow: 0 0 0 3px var(--ink), inset 0 -4px 0 #b8491a, inset 0 3px 0 #ffa25c;
+}
+.btn:active { transform: translateY(2px); box-shadow: 0 0 0 3px var(--ink), inset 0 -2px 0 #b8491a; }
+.btn.gray { background: var(--slate); box-shadow: 0 0 0 3px var(--ink), inset 0 -4px 0 #262b44, inset 0 3px 0 #5a6988; }
+.btn.green { background: var(--green); box-shadow: 0 0 0 3px var(--ink), inset 0 -4px 0 var(--dgreen), inset 0 3px 0 #a3e68f; }
+.btn.has-new::after {
+  content: '!'; position: absolute; right: -8px; top: -10px; width: 16px; height: 16px;
+  background: var(--red); color: #fff; font-size: 10px; line-height: 16px; text-align: center;
+  box-shadow: 0 0 0 3px var(--ink); animation: blink 0.8s steps(2) infinite;
+}
+@keyframes blink { 50% { transform: translateY(-3px); } }
+
+/* ---------- popups ---------- */
+#pops { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
+.pop { position: absolute; transform: translate(-50%, -50%); font-size: 12px; color: var(--gold);
+  white-space: nowrap; animation: floatUp .9s steps(9) forwards; }
+.pop.big { font-size: 16px; color: var(--green); animation-duration: 1.4s; }
+.pop.bad { color: var(--red); font-size: 10px; }
+.pop.helper { font-size: 9px; color: #fff3b0; }
+@keyframes floatUp {
+  0% { margin-top: 0; opacity: 1; }
+  80% { opacity: 1; }
+  100% { margin-top: -54px; opacity: 0; }
+}
+
+/* ---------- touch ---------- */
+#stick { position: fixed; width: 96px; height: 96px; margin: -48px 0 0 -48px; pointer-events: none;
+  background: rgba(24,20,37,.35); box-shadow: 0 0 0 3px rgba(255,255,255,.5); }
+#knob { position: absolute; left: 50%; top: 50%; width: 36px; height: 36px; margin: -18px 0 0 -18px;
+  background: var(--white); box-shadow: 0 0 0 3px var(--ink); }
+#btnThrow {
+  position: fixed; right: 18px; bottom: max(26px, env(safe-area-inset-bottom));
+  width: 104px; height: 104px; font-size: 11px; pointer-events: auto;
+}
+#btnThrow.off { filter: grayscale(1) brightness(.75); }
+
+/* ---------- panels ---------- */
+.overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: rgba(24,20,37,.55); padding: 14px; }
+.panel {
+  background: var(--navy); width: min(94vw, 620px); max-height: 92vh; display: flex; flex-direction: column;
+  box-shadow: 0 0 0 4px var(--ink), 0 0 0 8px var(--yellow), 0 0 0 12px var(--ink);
+  padding: 16px;
+}
+.panel h1 { margin: 0; font-size: 26px; color: var(--gold); font-weight: normal; letter-spacing: 2px; }
+.panel h2 { margin: 0; font-size: 14px; color: var(--gold); font-weight: normal; }
+.panelHead { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+#shopMoney { color: var(--gold); font-size: 12px; }
+#shop .panel { width: min(94vw, 900px); }
+#shopList { overflow-y: auto; touch-action: pan-y; padding: 4px; display: grid; gap: 10px;
+  scrollbar-color: var(--yellow) var(--ink); }
+.item { display: grid; grid-template-columns: 44px 1fr auto; gap: 10px; align-items: center;
+  background: var(--slate); padding: 8px; box-shadow: 0 0 0 3px var(--ink); }
+.item img { width: 40px; height: 40px; image-rendering: pixelated; image-rendering: crisp-edges;
+  background: #8b9bb4; box-shadow: 0 0 0 3px var(--ink); }
+.item .name { font-size: 10px; color: var(--white); }
+.item .desc { font-size: 8px; color: var(--mist); margin-top: 4px; line-height: 1.6; }
+.item .lvl { font-size: 8px; color: var(--gold); margin-top: 4px; }
+.item .btn { min-width: 92px; font-size: 9px; }
+.item .btn:disabled { background: #5a6988; color: #9aa7bd; cursor: default;
+  box-shadow: 0 0 0 3px var(--ink), inset 0 -4px 0 #3a4466; transform: none; }
+.item .btn.max { background: var(--dgreen); color: #fff; box-shadow: 0 0 0 3px var(--ink), inset 0 -4px 0 #265c42; }
+.panelFoot { margin-top: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.small { font-size: 8px; color: var(--mist); line-height: 1.8; }
+
+#title .panel { text-align: center; align-items: center; gap: 14px; padding: 22px 16px; }
+#title .sub { font-size: 10px; color: var(--white); line-height: 1.9; }
+#title .keys { font-size: 8px; color: var(--mist); line-height: 2; }
+#title .btn { font-size: 14px; padding: 14px 22px; }
+.blinky { animation: blink2 1s steps(2) infinite; }
+@keyframes blink2 { 50% { opacity: .55; } }
+
+@media (min-width: 820px) { #shopList { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 520px) {
+  #money { font-size: 15px; }
+  .panel h1 { font-size: 20px; }
+  #hudCenter { top: calc(max(12px, env(safe-area-inset-top)) + 44px); width: 44vw; }
+  #hint { top: calc(max(12px, env(safe-area-inset-top)) + 96px); font-size: 9px; }
+  .item { grid-template-columns: 36px 1fr auto; gap: 8px; }
+  .item img { width: 32px; height: 32px; }
+  .item .btn { min-width: 74px; padding: 9px 6px; }
+}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="hud" class="hidden">
+  <div id="hudLeft">
+    <div id="money" class="outline"><span class="coin"></span><span id="moneyVal">$0</span></div>
+    <div id="carry" class="outline">LIXO 0/1</div>
+    <div id="combo" class="outline"></div>
+  </div>
+  <div id="hudCenter">
+    <div id="loadLabel" class="outline">CARGA DO CAMINHÃO</div>
+    <div id="load"><div id="loadFill"></div></div>
+  </div>
+  <div id="hudRight">
+    <button id="btnMute" class="btn gray" aria-label="Som">SOM</button>
+    <button id="btnShop" class="btn">LOJA</button>
+  </div>
+  <div id="hint" class="outline"></div>
+</div>
+
+<div id="pops"></div>
+
+<div id="stick" class="hidden"><div id="knob"></div></div>
+<button id="btnThrow" class="btn green hidden">JOGAR<br>LIXO!</button>
+
+<div id="shop" class="overlay hidden">
+  <div class="panel">
+    <div class="panelHead">
+      <h2>LOJA DE UPGRADES</h2>
+      <span id="shopMoney">$0</span>
+    </div>
+    <div id="shopList"></div>
+    <div class="panelFoot">
+      <button id="btnReset" class="btn gray">APAGAR SAVE</button>
+      <button id="btnCloseShop" class="btn green">VOLTAR</button>
+    </div>
+  </div>
+</div>
+
+<div id="title" class="overlay">
+  <div class="panel">
+    <h1>LIXEIRO</h1>
+    <div class="sub">Corra atrás do caminhão,<br>pegue o lixo da calçada<br>e jogue na caçamba!</div>
+    <button id="btnStart" class="btn green blinky">COMEÇAR</button>
+    <div class="keys" id="titleKeys">
+      WASD / SETAS = andar<br>
+      ESPAÇO / CLIQUE = jogar o lixo<br>
+      E = loja de upgrades
+    </div>
+  </div>
+</div>
+
+<script src="js/three.min.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
