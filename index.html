@@ -11,6 +11,7 @@
   font-display: swap;
 }
 :root {
+  color-scheme: dark;
   --ink: #181425;
   --navy: #262b44;
   --slate: #3a4466;
@@ -46,7 +47,7 @@ html, body {
 /* ---------- HUD ---------- */
 #hud { position: fixed; inset: 0; pointer-events: none; padding: 12px;
   padding-top: max(12px, env(safe-area-inset-top)); }
-#hudLeft { position: absolute; left: 12px; top: max(12px, env(safe-area-inset-top)); }
+#hudLeft { position: absolute; left: max(16px, env(safe-area-inset-left, 0px)); top: max(12px, env(safe-area-inset-top)); }
 #money { font-size: 20px; color: var(--gold); display: flex; align-items: center; gap: 8px; }
 #money .coin {
   width: 18px; height: 18px; background: var(--yellow); display: inline-block;
@@ -62,7 +63,7 @@ html, body {
 #load { height: 14px; background: var(--navy); box-shadow: 0 0 0 3px var(--ink); position: relative; }
 #loadFill { position: absolute; left: 0; top: 0; bottom: 0; width: 0%; background: var(--green);
   box-shadow: inset 0 -4px 0 var(--dgreen); }
-#hudRight { position: absolute; right: 12px; top: max(12px, env(safe-area-inset-top));
+#hudRight { position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); top: max(12px, env(safe-area-inset-top));
   display: flex; gap: 10px; pointer-events: auto; }
 #hint { position: absolute; left: 50%; top: calc(max(12px, env(safe-area-inset-top)) + 52px); transform: translateX(-50%);
   width: min(90vw, 560px); text-align: center; font-size: 10px; line-height: 1.8; color: var(--white);
@@ -102,14 +103,15 @@ html, body {
 #knob { position: absolute; left: 50%; top: 50%; width: 36px; height: 36px; margin: -18px 0 0 -18px;
   background: var(--white); box-shadow: 0 0 0 3px var(--ink); }
 #btnThrow {
-  position: fixed; right: 18px; bottom: max(26px, env(safe-area-inset-bottom));
+  position: fixed; right: max(18px, env(safe-area-inset-right, 0px)); bottom: max(26px, env(safe-area-inset-bottom));
   width: 104px; height: 104px; font-size: 11px; pointer-events: auto;
 }
 #btnThrow.off { filter: grayscale(1) brightness(.75); }
 
 /* ---------- panels ---------- */
 .overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
-  background: rgba(24,20,37,.55); padding: 14px; }
+  background: rgba(24,20,37,.55); padding-block: 14px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 .panel {
   background: var(--navy); width: min(94vw, 620px); max-height: 92vh; display: flex; flex-direction: column;
   box-shadow: 0 0 0 4px var(--ink), 0 0 0 8px var(--yellow), 0 0 0 12px var(--ink);
